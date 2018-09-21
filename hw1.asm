@@ -26,7 +26,10 @@ floating_point_str: .asciiz "_2*2^"
 nl: .asciiz "\n"
 
 # Put your additional .data declarations here, if any.
-tmp: .asciiz "temp\n"
+neg_sign: .asciiz "-"
+max_neg_value: .asciiz "-2147483648"
+tmp1: .asciiz "temp\n"
+tmp2: .asciiz "temp2\n"
 
 # Main program starts here
 .text
@@ -112,7 +115,134 @@ done_with_count:
     # check to see if addr_arg1 has at most 32 characters
     li $t0, 32
     sub $s1, $s1, $t0	# $s1 = count - 32
-    bgtz $s1, exit_invalid_args	# exit is arg1 > 32 chars
+    bgtz $s1, exit_invalid_args	# exit if arg1 > 32 chars
+    add $s1, $s1, $t0 # $s1 = num of characters
+    li $t1, 1
+    sub $s1, $s1, $t1
+    blez $s1, exit_invalid_args # exit if arg1 < 2 chars
+    add $s1, $s1, $t1
+    # Check most significant bit
+    lw $s0, addr_arg1
+    lbu $t0, 0($s0)
+    li $t1, '0'
+    beq $t0, $t1, pos_number	# pos number
+    li $t1, '1'	
+    beq $t0, $t1, neg_number	# neg number
+
+# Check for special case- -2^(N-1)
+neg_number: 
+    li $t0, 32
+    bne $s1, $t0, convert_neg_number # special case must have 32 chars
+    lw $s0, addr_arg1
+    addi $s0, $s0, 1	# increment by 1 so check_if_all_zero_loop starts at second char
+# check to make sure all vals besides first are 0
+check_if_all_zero_loop:
+    lbu $t3, 0($s0)
+    beqz $t3, pass_max_neg_check
+    addi $s0, $s0, 1
+    li $t4, '0'					# input validation
+    beq $t3, $t4, check_if_all_zero_loop	# input validation
+    j convert_neg_number
+# this is the max neg value
+pass_max_neg_check:
+    la $a0, max_neg_value
+    li $v0, 4
+    syscall
+    j exit
+    
+# this is a neg value, but not the max neg value    
+convert_neg_number:  
+    li $s2, 1
+    lw $s0, addr_arg1
+    li $t2, 0 # counter
+find_the_zero_loop:
+    lb $t0, 0($s0)
+    beqz $t0, find_the_zero_loop_done
+    addi $s0, $s0, 1
+    addi $t2, $t2, 1
+    li $t1, '0'			
+    beq $t0, $t1, add_val_total	# input validation
+    j find_the_zero_loop
+
+add_val_total:
+    li $t3, 0
+    sub $t3, $s1, $t2
+    li $t4, 1
+    li $t5, 2
+    li $t6, 1
+    li $t8, 0
+add_val_total_loop:
+    blez $t3, add_new
+    mult $t4, $t5
+    mflo $t4
+    addi $t3, $t3, -1
+    j add_val_total_loop
+add_new:
+    add $s2, $s2, $t4
+    j find_the_zero_loop
+
+find_the_zero_loop_done:
+    la $a0, neg_sign
+    li $v0, 4
+    syscall
+    move $a0, $s2
+    li $v0, 1    
+    syscall
+    j exit
+
+# check for special case- 0
+pos_number:
+    li $s2, 0
+# check to make sure all vals besides first are 0
+check_if_zero_loop:
+    lbu $t3, 0($s0)
+    beqz $t3, pass_is_zero_check
+    addi $s0, $s0, 1
+    li $t4, '0'				# input validation
+    beq $t3, $t4, check_if_zero_loop	# input validation
+    j get_pos_number
+# this is zero
+pass_is_zero_check:
+    li $a0, '0'
+    li $v0, 11
+    syscall
+    j exit
+
+# this is a pos num
+get_pos_number:
+    li $s2, 0
+    lw $s0, addr_arg1
+    li $t2, 0 # counter
+find_the_one_loop:
+    lb $t0, 0($s0)
+    beqz $t0, find_the_one_loop_done
+    addi $s0, $s0, 1
+    addi $t2, $t2, 1
+    li $t1, '1'			
+    beq $t0, $t1, add_val_total2	# input validation
+    j find_the_one_loop
+
+add_val_total2:
+    li $t3, 0
+    sub $t3, $s1, $t2
+    li $t4, 1
+    li $t5, 2
+    li $t6, 1
+    li $t8, 0
+add_val_total_loop2:
+    blez $t3, add_new2
+    mult $t4, $t5
+    mflo $t4
+    addi $t3, $t3, -1
+    j add_val_total_loop2
+add_new2:
+    add $s2, $s2, $t4
+    j find_the_one_loop
+
+find_the_one_loop_done:
+    move $a0, $s2
+    li $v0, 1    
+    syscall
     j exit
 
     
