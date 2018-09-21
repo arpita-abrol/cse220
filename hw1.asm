@@ -28,8 +28,8 @@ nl: .asciiz "\n"
 # Put your additional .data declarations here, if any.
 neg_sign: .asciiz "-"
 max_neg_value: .asciiz "-2147483648"
-tmp1: .asciiz "temp\n"
-tmp2: .asciiz "temp2\n"
+zero_one_value: .word 0
+zero_two_value: .word 0
 
 # Main program starts here
 .text
@@ -148,6 +148,9 @@ pass_max_neg_check:
     la $a0, max_neg_value
     li $v0, 4
     syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
     j exit
     
 # this is a neg value, but not the max neg value    
@@ -188,6 +191,9 @@ find_the_zero_loop_done:
     move $a0, $s2
     li $v0, 1    
     syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
     j exit
 
 # check for special case- 0
@@ -205,6 +211,9 @@ check_if_zero_loop:
 pass_is_zero_check:
     li $a0, '0'
     li $v0, 11
+    syscall
+    la $a0, nl
+    li $v0, 4
     syscall
     j exit
 
@@ -243,6 +252,9 @@ find_the_one_loop_done:
     move $a0, $s2
     li $v0, 1    
     syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
     j exit
 
     
@@ -252,6 +264,125 @@ check_one_arg_f:
     lw $t0, num_args
     li $t1, 2
     bne $t0, $t1, exit_invalid_args
+    lw $s0, addr_arg1
+    li $s1, 0  # length of string
+    
+check_valid_eight:
+    lbu $t0, 0($s0)
+    beqz $t0, check_valid_eight_done
+    addi $s1, $s1, 1
+    addi $s0, $s0, 1
+    li $t3, '0'	
+    beq $t0, $t3, check_valid_eight
+    li $t3, '1'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '2'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '3'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '4'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '5'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '6'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '7'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '8'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, '9'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'A'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'B'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'C'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'D'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'E'		
+    beq $t0, $t3, check_valid_eight
+    li $t3, 'F'		
+    beq $t0, $t3, check_valid_eight
+    j exit_invalid_args
+
+check_valid_eight_done:
+    # check to see if addr_arg1 is 8 chars
+    li $t0, 8
+    sub $s1, $s1, $t0	# $s1 = count - 8
+    bnez $s1, exit_invalid_args	# exit if arg1 neq 8 chars
+    
+    lw $s0, addr_arg1
+    # if first char = 8, then start checking for zeros at the second char
+    li $t1, '8'
+    lb $t0, 0($s0)
+    bne $t0, $t1, check_if_zero_one_loop
+    addi $s0, $s0, 1
+    # check if zero  
+check_if_zero_one_loop:
+    li $t1, '0'
+    lb $t0, 0($s0)
+    beqz $t0, f_exit_zero
+    bne $t0, $t1, not_special_zero
+    addi $s0, $s0, 1
+    j check_if_zero_one_loop
+not_special_zero:      
+    # check for +/-INF
+    # see if chars 2,3 = "F8"
+    lw $s0, addr_arg1
+    # if second char = F, then start check third char
+    li $t1, 'F'
+    lb $t0, 1($s0)
+    bne $t0, $t1, not_special_inf
+    # if third char = 8, then check 4-8 = 0
+    li $t1, '8'
+    lb $t0, 2($s0)
+    bne $t0, $t1, not_special_inf
+    addi $s0, $s0, 3
+    # check if zero  
+check_if_zero_inf_loop:
+    li $t1, '0'
+    lb $t0, 0($s0)
+    beqz $t0, check_first_inf
+    bne $t0, $t1, not_special_inf
+    addi $s0, $s0, 1
+    j check_if_zero_inf_loop
+check_first_inf:
+    lw $s0, addr_arg1
+    # if first char = F, then neg_infinity
+    li $t1, 'F'
+    lb $t0, 0($s0)
+    beq $t0, $t1, f_exit_neg_inf
+    # if first char = 7, then pos_infinity. else, checks if NaN and then converts
+    li $t1, '7'
+    beq $t0, $t1, f_exit_pos_inf    
+not_special_inf:
+    # TODO
+    # NaN VALUES 
+    # FLOATING_POINT VALUES
+    j exit 
+    
+f_exit_zero:
+    la $a0, zero_str
+    li $v0, 4
+    syscall
+    j exit
+f_exit_neg_inf:
+    la $a0, neg_infinity_str
+    li $v0, 4
+    syscall
+    j exit
+f_exit_pos_inf:
+    la $a0, pos_infinity_str
+    li $v0, 4
+    syscall
+    j exit
+f_exit_nan:
+    la $a0, NaN_str
+    li $v0, 4
+    syscall
+    j exit    
+    
 
 # PART 4 -------------------------------------------------------------------
 # checks if there are three other args (C); Leads to part 4
@@ -259,6 +390,102 @@ check_three_arg:
     lw $t0, num_args
     li $t1, 4
     bne $t0, $t1, exit_invalid_args
+    # convert addr_arg2 to decimal
+    lw $t0, addr_arg2
+    move $a0, $t0
+    li $v0, 84
+    syscall
+    move $s1, $v0
+    # conver addr_arg3 to decimal
+    lw $t0, addr_arg3
+    move $a0, $t0
+    li $v0, 84
+    syscall
+    move $s2, $v0
+    # validate addr_arg1
+    lw $s0, addr_arg1
+# checks to make sure each digit in addr_arg1 is < addr_arg2    
+validate_part_four_loop:
+    lbu $t0, 0($s0)
+    beqz $t0, validate_part_four_loop_done
+    li $t1, '0'
+    sub $t2, $t0, $t1 
+    addi $s0, $s0, 1
+    bge $t2, $s1, exit_invalid_args
+    j validate_part_four_loop
+
+validate_part_four_loop_done:  
+    # check if bases are equal. if equal, return
+    beq $s1, $s2, exit_equal_bases    
+    
+    # convert to base 10
+    lw $s0, addr_arg1
+    lbu $t0, 0($s0)
+    li $t1, '0'
+    sub $t0, $t0, $t1
+    li $s3, 0
+    add $s3, $s3, $t0
+    
+convert_to_decimal_loop: 
+    lbu $t0, 1($s0)    
+    beqz $t0, convert_to_decimal_loop_done  
+    li $t1, '0'
+    sub $t0, $t0, $t1
+    mult $s3, $s1	# mult curr * org_base
+    mflo $s3
+    add $s3, $s3, $t0
+    addi $s0, $s0, 1
+    j convert_to_decimal_loop
+    
+convert_to_decimal_loop_done:
+    li $t0, 10
+    bne $s2, $t0, convert_from_decimal
+    move $a0, $s3
+    li $v0, 1
+    syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
+    j exit
+
+convert_from_decimal:
+    # convert num from string to decimal
+    
+    li $s5, 0	# value in new base
+    li $s4, 1	# place ie 1 10 100
+    
+from_decimal_loop:
+    beqz $s3, from_decimal_loop_done
+    div $s3, $s2	# org num / new base
+    mflo $s3		# quotient to $s0
+    mfhi $t0		# remainder
+    mult $t0, $s4	# remainder * place
+    mflo $t1		# $t1 = mult ans
+    add $s5, $s5, $t1	# $s3 = $s3 + new remainder in place
+    li $t2, 10
+    mult $s4, $t2
+    mflo $s4
+    j from_decimal_loop
+    
+from_decimal_loop_done: 
+    move $a0, $s5
+    li $v0, 1
+    syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
+    j exit
+
+    
+exit_equal_bases:
+    lw $s0, addr_arg1
+    move $a0, $s0
+    li $v0, 4
+    syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
+    j exit
 
 
 # below are the exit calls
