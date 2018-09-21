@@ -30,6 +30,7 @@ neg_sign: .asciiz "-"
 max_neg_value: .asciiz "-2147483648"
 zero_one_value: .word 0
 zero_two_value: .word 0
+four_buff: .space 32
 
 # Main program starts here
 .text
@@ -454,23 +455,49 @@ convert_from_decimal:
     li $s5, 0	# value in new base
     li $s4, 1	# place ie 1 10 100
     
+    li $s6, 0	# counter
+    la $s0, four_buff
+    
 from_decimal_loop:
     beqz $s3, from_decimal_loop_done
     div $s3, $s2	# org num / new base
     mflo $s3		# quotient to $s0
     mfhi $t0		# remainder
+    
+    addi $s6, $s6, 1	# increment
+    sb $t0, 0($s0)
+    addi $s0, $s0, 1
+    
     mult $t0, $s4	# remainder * place
     mflo $t1		# $t1 = mult ans
-    add $s5, $s5, $t1	# $s3 = $s3 + new remainder in place
+    #add $s5, $s5, $t1	# $s3 = $s3 + new remainder in place
     li $t2, 10
     mult $s4, $t2
     mflo $s4
     j from_decimal_loop
     
 from_decimal_loop_done: 
-    move $a0, $s5
+    #move $a0, $s6
+    #li $v0, 1
+    #syscall
+    
+    la $s0, four_buff
+    add $s0, $s0, $s6
+    # add $s0, $s0, $s6
+    
+reverse:
+    addi $s0, $s0, -1
+    addi $s6, $s6, -1
+    
+    lb $a0, 0($s0)
     li $v0, 1
     syscall
+    beqz $s6, end
+    j reverse
+end:
+    # move $a0, $s5
+    # li $v0, 1
+    # syscall
     la $a0, nl
     li $v0, 4
     syscall
