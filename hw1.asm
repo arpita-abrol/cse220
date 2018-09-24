@@ -31,6 +31,8 @@ max_neg_value: .asciiz "-2147483648"
 zero_one_value: .word 0
 zero_two_value: .word 0
 four_buff: .space 32
+three_buff: .space 32
+one_dot: .asciiz "1."
 
 # Main program starts here
 .text
@@ -359,10 +361,159 @@ check_first_inf:
     beq $t0, $t1, f_exit_pos_inf    
 not_special_inf:
     # TODO
+    # hex -> bin
     # NaN VALUES 
     # FLOATING_POINT VALUES
-    j exit 
+    la $s0, three_buff
+    lw $s1, addr_arg1
+    li $s2, 8	# counter
+hex_to_bin_loop:
+    lbu $t0, 0($s1)
+    beqz $t0, hex_to_bin_loop_done
+    addi $s1, $s1, 1	# next digit...
+    addi $s2, $s2, -1	# decrement counter
+    li $t1, '9'
+    ble $t0, $t1, add_hex_num
+    # add hex letter
+    li $t2, '7'
+    sub $t0, $t0, $t2    
+    j set_val
+    # add hex number
+    add_hex_num:
+    li $t2, '0'
+    sub $t0, $t0, $t2
     
+    set_val:
+    li $t2, 2
+    div $t0, $t2	# org num / new base
+    mflo $t0		# quotient
+    mfhi $t9		# remainder
+    div $t0, $t2
+    mflo $t0
+    mfhi $t8
+    div $t0, $t2
+    mflo $t0
+    mfhi $t7
+    div $t0, $t2
+    mflo $t0
+    mfhi $t6
+    sb $t6, 0($s0)
+    sb $t7, 1($s0)
+    sb $t8, 2($s0)
+    sb $t9, 3($s0)
+
+    addi $s0, $s0, 4
+    j hex_to_bin_loop
+   
+hex_to_bin_loop_done: 
+    # check if NaN
+    la $s0, three_buff
+    li $s1, 8	# 8 bits in e
+    li $s2, 23	# 23 bits in m
+    addi $s0, $s0, 1	# skip first bit (sign not relevant)
+    
+    check_e_loop:
+    lb $t0, 0($s0)
+    beqz $s1, check_m_loop
+    li $t1, 1
+    bne $t0, $t1, not_special_three
+    addi $s0, $s0, 1	# next digit...
+    addi $s1, $s1, -1	# decrement counter...
+    j check_e_loop
+    check_m_loop:
+    lb $t0, 0($s0)
+    beqz $s2, not_special_three
+    li $t1, 0
+    bne $t0, $t1, f_exit_nan
+    addi $s0, $s0, 1	# next digit...
+    addi $s2, $s2, -1	# decrement counter...
+    j check_m_loop
+    
+not_special_three:
+    la $s0, three_buff
+    lb $t0, 0($s0)
+    li $t1, 0
+    beq $t0, $t1, start_at_one
+    la $a0, neg_sign
+    li $v0, 4
+    syscall
+start_at_one:
+    la $a0, one_dot
+    li $v0, 4
+    syscall
+    # print mantissa
+    la $s0, three_buff
+    li $s1, 23	# 23 bits in m
+    addi $s0, $s0, 9	# skip first 9 bits
+    print_m_loop:
+    lb $t0, 0($s0)
+    beqz $s1, print_m_loop_done
+    lb $a0, 0($s0)
+    li $v0, 1
+    syscall
+    addi $s0, $s0, 1	# next digit...
+    addi $s1, $s1, -1	# decrement counter...
+    j print_m_loop
+print_m_loop_done:
+    la $a0, floating_point_str
+    li $v0, 4
+    syscall
+    # convert exponent bits to decimal val
+    la $s0, three_buff
+    li $s1, 7	# 7 bits left/ in e - starting bit
+    li $s2, 0 	# decimal value
+    li $s3, 2	# base
+    addi $s0, $s0, 1	# skip first bit (sign not relevant here)
+    lb $t0, 0($s0)
+    add $s2, $s2, $t0	# set init value
+    
+    convert_fraction_loop:
+    lb $t0, 1($s0)
+    beqz $s1, convert_fraction_loop_done
+    mult $s2, $s3
+    mflo $s2
+    add $s2, $s2, $t0
+    addi $s0, $s0, 1	# next digit...
+    addi $s1, $s1, -1	# decrement counter...
+    bne $t0, $t1, convert_fraction_loop
+    
+    j convert_fraction_loop
+    
+    convert_fraction_loop_done:
+    li $t0, 127
+    sub $s2, $s2, $t0
+    move $a0, $s2
+    li $v0, 1
+    syscall
+    la $a0, nl
+    li $v0, 4
+    syscall
+    j exit
+    
+    j end_print
+
+# this is to print
+#    la $s0, three_buff
+#    li $s6, 32
+#    la $a0, nl
+#    li $v0, 4
+#    syscall
+#print_bin:
+#    
+#    lb $a0, 0($s0)
+#    li $v0, 1
+#    syscall
+#    addi $s0, $s0, 1
+#    addi $s6, $s6, -1
+#    beqz $s6, end_print
+#    j print_bin
+    
+    
+end_print:    
+    la $a0, nl
+    li $v0, 4
+    syscall
+    j exit 
 f_exit_zero:
     la $a0, zero_str
     li $v0, 4
