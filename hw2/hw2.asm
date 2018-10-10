@@ -143,15 +143,31 @@ get_string_length_done:
 	move $v0, $t0
 	jr $ra
 
+
 #####################################################################
 ### Part III ###
+# int memcpy(byte *src, byte *dest, int n)
 memcpy:
-	li $v0, -200
-	li $v1, -200
-
+	li $v0, -1
+	blez $a2, return_memcpy	# only possible failure
+	
+	li $v0, 0	# will be success
+	li $t0, 0	# ctr
+	
+memcpy_loop:
+	beq $t0, $a2, return_memcpy
+	lbu $t1, 0($a0)
+	sb $t1, 0($a1)
+	addi $t0, $t0, 1
+	addi $a0, $a0, 1
+	addi $a1, $a1, 1
+	j memcpy_loop
+	
+return_memcpy:
 	jr $ra
 
 
+#####################################################################
 ### Part IV ###
 insert_car:
 	li $v0, -200
@@ -160,7 +176,7 @@ insert_car:
 
 	jr $ra
 	
-
+#####################################################################
 ### Part V ###
 most_damaged:
 	li $v0, -200
@@ -168,7 +184,7 @@ most_damaged:
 	
 	jr $ra
 
-
+#####################################################################
 ### Part VI ###
 sort:
 	li $v0, -200
@@ -176,7 +192,7 @@ sort:
 	
 	jr $ra
 
-
+#####################################################################
 ### Part VII ###
 most_popular_feature:
 	li $v0, -200
@@ -208,7 +224,7 @@ index_of:
 		
 	jr $ra
 
-
+#####################################################################
 ### Part VIII ###
 compute_check_digit:
 	li $v0, -200
