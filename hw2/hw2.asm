@@ -169,11 +169,81 @@ return_memcpy:
 
 #####################################################################
 ### Part IV ###
+# int insert_car(car[] cars, int length, car new_car, int index)
 insert_car:
-	li $v0, -200
-	li $v1, -200
+	# preserve registers...
+	addi $sp, $sp, -24
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+	sw $s2, 12($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
 	
-
+	# error testing
+	li $v0, -1	# return for error
+	bltz $a1, return_insert_car	# length < 0
+	bltz $a3, return_insert_car	# index < 0
+	bgt $a3, $a1, return_insert_car	# index > length
+	
+	li $v0, 0	# return for success
+	
+	# store args so can call new functions
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	li $t0, 0	# ctr
+	
+# loop... get to end
+start_insert_car_loop:
+	beq $t0, $s1, insert_car_end
+	addi $s0, $s0, 16	# advance array pointer to next element
+	addi $t0, $t0, 1	# i = i + 1
+	j start_insert_car_loop
+	
+# insert car at end
+insert_car_end:
+	move $a0, $s2	# src
+	move $a1, $s0	# dest
+	li $a2, 16	# num bytes
+	jal memcpy	# function
+	
+# check if insert at end
+	beq $s1, $s3, return_insert_car
+	
+# insert new_car not at end
+	# make $s4 set for one element before $s0
+	move $s4, $s0
+	addi $s4, $s4, -16
+insert_car_move_loop:
+	beq $s1, $s3 insert_car_new
+	move $a0, $s4
+	move $a1, $s0
+	li $a2, 16
+	jal memcpy	
+	addi $s1, $s1, -1
+	addi $s0, $s0, -16
+	addi $s4, $s4, -16
+	j insert_car_move_loop
+	
+insert_car_new:
+	move $a0, $s2	# src
+	move $a1, $s0	# dest
+	li $a2, 16	# num bytes
+	jal memcpy	# function
+	
+return_insert_car:
+	# restore registers...
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	sw $s4, 20($sp)
+	addi $sp, $sp, 24
+	
 	jr $ra
 	
 #####################################################################
