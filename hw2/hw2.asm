@@ -241,17 +241,95 @@ return_insert_car:
 	lw $s1, 8($sp)
 	lw $s2, 12($sp)
 	lw $s3, 16($sp)
-	sw $s4, 20($sp)
+	lw $s4, 20($sp)
 	addi $sp, $sp, 24
 	
 	jr $ra
 	
 #####################################################################
 ### Part V ###
+# (int, int) most_damaged(car[] cars, repair[] repairs, int cars_length, int repairs_length)
 most_damaged:
-	li $v0, -200
-	li $v1, -200
+	# preserve registers...
+	addi $sp, $sp, -36
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+	sw $s2, 12($sp)
+	sw $s3, 16($sp)
+	sw $s4, 20($sp)
+	sw $s5, 24($sp)
+	sw $s6, 28($sp)
+	sw $s7, 32($sp)
 	
+	# check for any errors
+	li $v0, -1
+	li $v1, -1
+	blez $a2, return_most_damaged
+	blez $a3, return_most_damaged
+	
+	# store args so can call new functions
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# set curr max- first car in list
+	# move $t0, $s0	# store address for first car
+	li $s4, -1		# store index for car - placeholder
+	li $s5, -1		# store repair cost for car - placeholder
+	
+	# go through all cars in list:
+	li $s6, 0	# counter / tmp index
+most_damaged_cars_loop:
+	beq $s6, $s2, most_damaged_cars_done
+	move $t0, $s0	# store address for curr car
+	
+	li $t2, 0	# counter
+	li $s7, 0	# tmp cost
+	move $s1, $a1
+	# get car cost...
+	most_damaged_cars_cost_loop:
+		beq $t2, $s3, most_damaged_cars_loop_resume
+		lw $t1, 0($s1)	# pointer for car in curr repair
+		bne $t1, $t0, most_damaged_cars_cost_loop_next	# if curr_car isn't right index, skip
+		
+		li $t4, 0
+		lh $t4, 8($s1)
+		add $s7, $s7, $t4	# add repairs
+		
+		most_damaged_cars_cost_loop_next:
+		addi $t2, $t2, 1
+		addi $s1, $s1, 12
+		j most_damaged_cars_cost_loop
+	
+	most_damaged_cars_loop_resume: 
+	
+	ble $s7, $s5, most_damaged_cars_loop_next	
+	move $s4, $s6
+	move $s5, $s7
+	
+	most_damaged_cars_loop_next:
+	addi $s0, $s0, 16	# go to next car in list
+	addi, $s6, $s6, 1	# increment counter
+	j most_damaged_cars_loop
+
+most_damaged_cars_done:
+	move $v0, $s4
+	move $v1, $s5
+
+return_most_damaged:
+	# restore registers
+	lw $ra, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	lw $s2, 12($sp)
+	lw $s3, 16($sp)
+	lw $s4, 20($sp)
+	lw $s5, 24($sp)
+	lw $s6, 28($sp)
+	lw $s7, 32($sp)
+	addi $sp, $sp, 36
 	jr $ra
 
 #####################################################################
