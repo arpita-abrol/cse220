@@ -474,10 +474,81 @@ return_sort:
 
 #####################################################################
 ### Part VII ###
+# int most_popular_feature(car[] cars, int length, nibble features)
 most_popular_feature:
-	li $v0, -200
-	li $v1, -200
 	
+	# check for errors TODO cars have no features
+	li $v0, -1
+	blez $a1, return_most_popular_feature
+	blez $a2, return_most_popular_feature
+	li $t0, 15
+	bgt $a2, $t0, return_most_popular_feature
+	
+	# feature counters
+	li $t0, 0	# convert, 0001
+	li $t1, 0	# hybrid,  0010
+	li $t2, 0	# tinted,  0100
+	li $t3, 0	# GPC,     1000
+	
+	li $t4, 0	# counter
+	
+most_popular_features_loop:
+	beq $t4, $a1, most_popular_features_done
+	lbu $t5, 14($a0)	# load the car feature
+	
+	check_gps:
+	andi $t6, $t5, 8
+	beqz $t6, check_tinted
+	andi $t6, $a2, 8
+	beqz $t6, check_tinted
+	addi $t3, $t3, 1
+	check_tinted:
+	andi $t6, $t5, 4
+	beqz $t6, check_hybrid
+	andi $t6, $a2, 4
+	beqz $t6, check_hybrid
+	addi $t2, $t2, 1
+	check_hybrid:
+	andi $t6, $t5, 2
+	beqz $t6, check_convertible
+	andi $t6, $a2, 2
+	beqz $t6, check_convertible
+	addi $t1, $t1, 1
+	check_convertible:
+	andi $t6, $t5, 1
+	beqz $t6, done_checking
+	andi $t6, $a2, 1
+	beqz $t6, done_checking
+	addi $t0, $t0, 1
+	done_checking:
+	
+	addi $a0, $a0, 16	# move to next car
+	addi $t4, $t4, 1	# increment counter
+	j most_popular_features_loop
+	
+most_popular_features_done:
+	
+	#ble $t3, $t4, most_popular_features_comp	
+	move $t4, $t3	# set max features
+	li $t5, 8
+most_popular_features_comp:
+	ble $t2, $t4, most_popular_features_comp_one
+	move $t4, $t2
+	li $t5, 4
+most_popular_features_comp_one:
+	ble $t1, $t4, most_popular_features_comp_two
+	move $t4, $t1
+	li $t5, 2
+most_popular_features_comp_two:
+	ble $t0, $t4, most_popular_features_verify
+	move $t4, $t0
+	li $t5, 1
+most_popular_features_verify:
+	move $v0, $t5
+	bnez $t4, return_most_popular_feature
+	li $v0, -1
+	
+return_most_popular_feature:
 	jr $ra
 	
 
