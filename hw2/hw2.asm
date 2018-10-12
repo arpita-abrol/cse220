@@ -251,16 +251,15 @@ return_insert_car:
 # (int, int) most_damaged(car[] cars, repair[] repairs, int cars_length, int repairs_length)
 most_damaged:
 	# preserve registers...
-	addi $sp, $sp, -36
-	sw $ra, 0($sp)
-	sw $s0, 4($sp)
-	sw $s1, 8($sp)
-	sw $s2, 12($sp)
-	sw $s3, 16($sp)
-	sw $s4, 20($sp)
-	sw $s5, 24($sp)
-	sw $s6, 28($sp)
-	sw $s7, 32($sp)
+	addi $sp, $sp, -32
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
+	sw $s6, 24($sp)
+	sw $s7, 28($sp)
 	
 	# check for any errors
 	li $v0, -1
@@ -320,24 +319,157 @@ most_damaged_cars_done:
 
 return_most_damaged:
 	# restore registers
-	lw $ra, 0($sp)
-	lw $s0, 4($sp)
-	lw $s1, 8($sp)
-	lw $s2, 12($sp)
-	lw $s3, 16($sp)
-	lw $s4, 20($sp)
-	lw $s5, 24($sp)
-	lw $s6, 28($sp)
-	lw $s7, 32($sp)
-	addi $sp, $sp, 36
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	lw $s6, 24($sp)
+	lw $s7, 28($sp)
+	addi $sp, $sp, 32
 	jr $ra
 
 #####################################################################
 ### Part VI ###
+# int sort(car[] cars, int length)
 sort:
-	li $v0, -200
-	li $v1, -200
+	# preserve registers...
+	addi $sp, $sp, -24
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
 	
+	# check for errors
+	li $v0, -1
+	blez $a1, return_sort
+	
+	li $v0, 0	# no error, return 0
+	# preserve vals
+	move $s0, $a0
+	move $s1, $a1
+	
+	li $s2, 1	# true/false... 0/1
+sort_loop:
+	beqz $s2, sort_loop_exit
+	li $s2, 0	# sorted = True
+	
+	# first for loop
+	li $s3, 1		# i = 1
+	addi $s1, $s1, -1	# length - 1
+	move $s4, $s0		# cars[0]
+	move $s5, $s0		# cars[0]
+	addi $s5, $s5, 16	# cars[1]
+	sort_loop_one:
+		bge $s3, $s1, sort_loop_one_exit
+		lh $t0, 12($s4)	# year of cars[i]
+		lh $t1, 12($s5) # year of cars[i+1]
+		ble $t0, $t1, sort_loop_one_next
+		# swap cars now
+		move $a0, $s4
+		addi $sp, $sp, -16
+		move $a1, $sp
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		move $a0, $s5
+		move $a1, $s4
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		move $a0, $sp
+		move $a1, $s5
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		addi $sp, $sp, 16
+		
+		li $s2, 1	# set to false
+		sort_loop_one_next:
+		addi $s4, $s4, 32
+		addi $s5, $s5, 32
+		addi $s3, $s3, 2
+		j sort_loop_one	
+	sort_loop_one_exit:
+	
+	# second for loop
+	li $s3, 0		# i = 0
+	move $s4, $s0		# cars[0]
+	addi $s4, $s4, 16	# cars[1]
+	move $s5, $s0		# cars[0]
+	addi $s5, $s5, 32	# cars[2]
+	sort_loop_two:
+		bge $s3, $s1, sort_loop_two_exit
+		lh $t0, 12($s4)	# year of cars[i]
+		lh $t1, 12($s5) # year of cars[i+1]
+		ble $t0, $t1, sort_loop_two_next
+		# swap cars now
+		move $a0, $s4
+		addi $sp, $sp, -16
+		move $a1, $sp
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		move $a0, $s5
+		move $a1, $s4
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		move $a0, $sp
+		move $a1, $s5
+		li $a2, 16
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		jal memcpy
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		
+		addi $sp, $sp, 16
+		
+		li $s2, 1	# set to false
+		sort_loop_two_next:
+		addi $s4, $s4, 32
+		addi $s5, $s5, 32
+		addi $s3, $s3, 2
+		j sort_loop_two	
+	sort_loop_two_exit:
+	
+	j sort_loop
+	
+sort_loop_exit:
+
+return_sort:
+	# restore registers...
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	addi $sp, $sp, 24
 	jr $ra
 
 #####################################################################
