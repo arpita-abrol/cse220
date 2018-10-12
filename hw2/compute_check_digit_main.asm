@@ -15,19 +15,25 @@ vin_test5: .asciiz "1M2P198C0JW002996"
 .text
 .globl main
 main:
+# print compute_check_digit
 la $a0, compute_check_digit_output
 li $v0, 4
 syscall
+# load args, call function
 la $a0, vin_test1
 la $a1, map
 la $a2, weights
 la $a3, transliterate_str
 jal compute_check_digit
+
+# print output
 move $a0, $v0
 li $v0, 11
 syscall
+# print newline
 la $a0, nl
 li $v0, 4
 syscall
+# exit
 li $v0, 10
 syscall

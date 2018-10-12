@@ -551,37 +551,163 @@ most_popular_features_verify:
 return_most_popular_feature:
 	jr $ra
 	
-
+#####################################################################
+#####################################################################
+#####################################################################
 ### Optional function: not required for the assignment ###
+# int transliterate(string transliterate_str, char c):
 transliterate:
-	li $v0, -200
-	li $v1, -200
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal index_of
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	move $t0, $v0
+	li $t1, 10
+	div $t0, $t1
+	mfhi $t0
+	
+	move $v0, $t0
 	
 	jr $ra
 
 
 ### Optional function: not required for the assignment ###
-char_at:
-	li $v0, -200
-	li $v1, -200
-
+# char char_at(string str, int num)
+char_at:	
+	li $t0, 0	# counter
+	
+char_at_loop:
+	beq $t0, $a1, return_char_at	
+	addi $t0, $t0, 1
+	addi $a0, $a0, 1
+	j char_at_loop
+	
+return_char_at:
+	lb $v0, 0($a0)
 	jr $ra
 
 
 ### Optional function: not required for the assignment ###
+# int index_of(string str, char c)
 index_of:
-	li $v0, -200
-	li $v1, -200
-		
+	li $t0, 0	# counter
+index_of_loop:
+	lb $t1, 0($a0)
+	beq $t1, $a1, return_index_of
+	addi $t0, $t0, 1
+	addi $a0, $a0, 1
+	j index_of_loop
+	
+return_index_of:
+	move $v0, $t0
 	jr $ra
 
 #####################################################################
 ### Part VIII ###
+# char compute_check_digit(string vin, string map, string weights,string transliterate_str)
 compute_check_digit:
-	li $v0, -200
-	li $v1, -200
+	# preserve registers...
+	addi $sp, $sp, -32
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
+	sw $s6, 24($sp)
+	sw $s7, 28($sp)
 	
-	jr $ra	
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	li $s4, 0	# sum = 0
+	li $s5, 0	# i = 0
+compute_check_digit_loop:
+	bge $s5, 17, compute_check_digit_done	# i < 17
+	
+	# vin.charAt(i)
+	move $a0, $s0
+	move $a1, $s5
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal char_at
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	move $t0, $v0
+	
+	# transliterate(transliterate_str, vin.charAt(i))
+	move $a0, $s3
+	move $a1, $t0
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal transliterate
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	move $s6, $v0
+	
+	# weights.char_at(i)
+	move $a0, $s2
+	move $a1, $s5
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal char_at
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	move $t0, $v0
+	
+	# map.index_of(weights.char_at(i))
+	move $a0, $s1
+	move $a1, $t0
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal index_of
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	move $s7, $v0
+	
+	# multiply
+	mult $s6, $s7
+	mflo $s6
+	
+	# add
+	add $s4, $s4, $s6
+	
+	addi $s5, $s5, 1	# i++
+	j compute_check_digit_loop
+	
+compute_check_digit_done:
+	# map.char_at(sum % 11)
+	move $a0, $s1
+	li $t0, 11
+	div $s4, $t0
+	mfhi $a1
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal char_at
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	
+return_compute_check_digit:
+	# restore registers
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	lw $s6, 24($sp)
+	lw $s7, 28($sp)
+	addi $sp, $sp, 32
+	jr $ra
 
 #####################################################################
 ############### DO NOT CREATE A .data SECTION! ######################
