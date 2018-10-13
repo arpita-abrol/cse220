@@ -15,7 +15,7 @@ syscall
 # load args and call function
 la $a0, all_cars
 li $a1, 6
-li $a2, 1
+li $a2, 15
 jal most_popular_feature
 # print return val
 move $a0, $v0

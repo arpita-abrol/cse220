@@ -119,4 +119,3 @@ print_a_car:
 	syscall
 	
 	jr $ra
-	

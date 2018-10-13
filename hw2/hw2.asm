@@ -351,6 +351,7 @@ sort:
 	# preserve vals
 	move $s0, $a0
 	move $s1, $a1
+	addi $s1, $s1, -1	# length - 1
 	
 	li $s2, 1	# true/false... 0/1
 sort_loop:
@@ -359,15 +360,18 @@ sort_loop:
 	
 	# first for loop
 	li $s3, 1		# i = 1
-	addi $s1, $s1, -1	# length - 1
+	
 	move $s4, $s0		# cars[0]
+	addi $s4, $s4, 16	# cars[1]
 	move $s5, $s0		# cars[0]
-	addi $s5, $s5, 16	# cars[1]
+	addi $s5, $s5, 32	# cars[2]
+	
 	sort_loop_one:
 		bge $s3, $s1, sort_loop_one_exit
 		lh $t0, 12($s4)	# year of cars[i]
 		lh $t1, 12($s5) # year of cars[i+1]
 		ble $t0, $t1, sort_loop_one_next
+		
 		# swap cars now
 		move $a0, $s4
 		addi $sp, $sp, -16
@@ -410,9 +414,8 @@ sort_loop:
 	# second for loop
 	li $s3, 0		# i = 0
 	move $s4, $s0		# cars[0]
-	addi $s4, $s4, 16	# cars[1]
 	move $s5, $s0		# cars[0]
-	addi $s5, $s5, 32	# cars[2]
+	addi $s5, $s5, 16	# cars[1]
 	sort_loop_two:
 		bge $s3, $s1, sort_loop_two_exit
 		lh $t0, 12($s4)	# year of cars[i]

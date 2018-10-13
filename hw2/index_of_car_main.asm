@@ -16,7 +16,7 @@ syscall
 # define args, call function
 la $a0, all_cars
 li $a1, 6
-li $a2, 2
+li $a2, 3
 li $a3, 2017
 jal index_of_car
 

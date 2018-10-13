@@ -218,5 +218,3 @@ sorted_all_cars:
 .byte 227, 7
 .byte 13
 .byte 0
-
-

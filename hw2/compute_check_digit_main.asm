@@ -20,7 +20,7 @@ la $a0, compute_check_digit_output
 li $v0, 4
 syscall
 # load args, call function
-la $a0, vin_test1
+la $a0, vin_test3
 la $a1, map
 la $a2, weights
 la $a3, transliterate_str
