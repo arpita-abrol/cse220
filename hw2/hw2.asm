@@ -125,7 +125,7 @@ strcmp_end:
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $ra, 0($sp)
-	addi $sp, $sp, 12
+	addi $sp, $sp, 20
 	jr $ra
 
 # int get_string_length(string str)
