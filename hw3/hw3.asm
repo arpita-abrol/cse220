@@ -160,15 +160,92 @@ map_plaintext_exit:
 	#lw $ra, 12($sp)
 #####################################################################
 # Part IV
+# int swap_matrix_columns(char[][] matrix, int num_rows, int num_cols, int col1, int col2)
 swap_matrix_columns:
-li $v0, -200
-li $v1, -200
+	# variable for fifth arg
+	lb $t0, 0($sp)
+	
+	# error checking
+	li $v0, -1
+	blez $a1, swap_matrix_columns_exit
+	blez $a2, swap_matrix_columns_exit
+	bltz $a3, swap_matrix_columns_exit
+	bge $a3, $a2, swap_matrix_columns_exit
+	bltz $t0, swap_matrix_columns_exit
+	bge $t0, $a2, swap_matrix_columns_exit
+	
+	# check is swapping same col; make $a3 the smaller column
+	beq $a3, $t0, swap_matrix_columns_exit
+	bgt $t0, $a3, swap_matrix_columns_cont
+	move $t1, $t0
+	move $t0, $a3
+	move $a3, $t1
+	
+swap_matrix_columns_cont:
+	# arguements are valid...
+	li $v0, 0
+	li $t2, 0	# row ctr
+	li $t3, -1	# col ctr
 
-jr $ra
+swap_matrix_columns_loop:
+	beq $t2, $a1, swap_matrix_columns_exit	# counter - checks if all rows swapped
+	move $t1, $a0	# store beginning of row
+	li $t3, 0	# col ctr
+	# get $a3 value
+	swap_matrix_columns_loop_c1:
+		beq $t3, $a3, swap_matrix_columns_loop_c1_found
+		addi $t3, $t3, 1
+		addi $t1, $t1, 1
+		j swap_matrix_columns_loop_c1
+	swap_matrix_columns_loop_c1_found:
+		lbu $t4, ($t1)	# set $t4 to [$t2][col1]
+		# reset values....
+		move $t1, $a0
+		li $t3, 0
+		
+	# get $t0 value, set it to $a3
+	swap_matrix_columns_loop_c2:
+		beq $t3, $t0, swap_matrix_columns_loop_c2_found
+		addi $t3, $t3, 1
+		addi $t1, $t1, 1
+		j swap_matrix_columns_loop_c2
+	swap_matrix_columns_loop_c2_found:
+		lbu $t5, ($t1)	# set $t4 to [$t2][col1]
+		sb $t4, ($t1)
+		# reset values....
+		move $t1, $a0
+		li $t3, 0
+		
+	# set new $a3 value
+	swap_matrix_columns_loop_set_c1:
+		beq $t3, $a3, swap_matrix_columns_loop_set_c1_found
+		addi $t3, $t3, 1
+		addi $t1, $t1, 1
+		j swap_matrix_columns_loop_set_c1
+	swap_matrix_columns_loop_set_c1_found:
+		sb $t5, ($t1)	# set $t4 to [$t2][col1]
+		# reset values....
+		move $t1, $a0
+		li $t3, 0
+		
+	# get to end of row
+	swap_matrix_columns_loop_end_r:
+		beq $t3, $a2, swap_matrix_columns_loop_next
+		addi $a0, $a0, 1
+		addi $t3, $t3, 1
+		j swap_matrix_columns_loop_end_r
+	swap_matrix_columns_loop_next:
+	addi $t2, $t2, 1
+	j swap_matrix_columns_loop
+	
+
+swap_matrix_columns_exit:
+	jr $ra
 
 
 #####################################################################
 # Part V
+# void key_sort_matrix(char[][] matrix, int num_rows, int num_cols, T[] key, int elem_size)
 key_sort_matrix:
 li $v0, -200
 li $v1, -200
@@ -178,6 +255,7 @@ jr $ra
 
 #####################################################################
 # Part IV
+# int transpose(char[][] matrix_src, char[][] matrix_dest, int num_rows, int num_cols)
 transpose:
 li $v0, -200
 li $v1, -200
