@@ -76,15 +76,40 @@ get_adfgvx_coords_exit:
 
 #####################################################################
 # Part II
+# (int, int) search_adfgvx_grid(char[][] adfgvx_grid, char plaintext_char)
 search_adfgvx_grid:
-li $v0, -200
-li $v1, -200
+	# initial values
+	li $v0, -1
+	li $v1, -1
+	
+	li $t0, 0	# row counter
+	li $t1, 0	# col counter
+	li $t3, 0	# ctr
+search_adfgvx_grid_loop:
+	lbu $t2, ($a0)
+	beq $t3, 36, search_adfgvx_grid_exit
+	# beqz $t2, search_adfgvx_grid_exit
+	beq $t2, $a1, search_adfgvx_grid_found
+	addi $t1, $t1, 1
+	bne $t1, 6, search_adfgvx_grid_loop_next
+	addi $t0, $t0, 1
+	li $t1, 0
+	search_adfgvx_grid_loop_next:
+	addi $a0, $a0, 1
+	addi $t3, $t3, 1
+	j search_adfgvx_grid_loop
 
-jr $ra
+search_adfgvx_grid_found:
+	move $v0, $t0
+	move $v1, $t1
+	
+search_adfgvx_grid_exit:
+	jr $ra
 
 
 #####################################################################
 # Part III
+# void map_plaintext(char[][] adfgvx_grid, String plaintext,char[][] middletext_buffer)
 map_plaintext:
 li $v0, -200
 li $v1, -200
