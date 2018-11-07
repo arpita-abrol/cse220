@@ -84,11 +84,11 @@ search_adfgvx_grid:
 	
 	li $t0, 0	# row counter
 	li $t1, 0	# col counter
-	li $t3, 0	# ctr
+	#li $t3, 0	# ctr
 search_adfgvx_grid_loop:
 	lbu $t2, ($a0)
-	beq $t3, 36, search_adfgvx_grid_exit
-	# beqz $t2, search_adfgvx_grid_exit
+	#beq $t3, 36, search_adfgvx_grid_exit
+	beqz $t2, search_adfgvx_grid_exit
 	beq $t2, $a1, search_adfgvx_grid_found
 	addi $t1, $t1, 1
 	bne $t1, 6, search_adfgvx_grid_loop_next
@@ -96,7 +96,7 @@ search_adfgvx_grid_loop:
 	li $t1, 0
 	search_adfgvx_grid_loop_next:
 	addi $a0, $a0, 1
-	addi $t3, $t3, 1
+	#addi $t3, $t3, 1
 	j search_adfgvx_grid_loop
 
 search_adfgvx_grid_found:
@@ -109,14 +109,55 @@ search_adfgvx_grid_exit:
 
 #####################################################################
 # Part III
-# void map_plaintext(char[][] adfgvx_grid, String plaintext,char[][] middletext_buffer)
+# void map_plaintext(char[][] adfgvx_grid, String plaintext, char[][] middletext_buffer)
 map_plaintext:
-li $v0, -200
-li $v1, -200
+	# store stack
+	addi $sp, $sp, -16
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	
+	# store arguments
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+map_plaintext_loop:
+	lbu $t0, ($s1)
+	beqz $t0, map_plaintext_exit
+	
+	# call search_adfgvx_grid
+	move $a0, $s0
+	move $a1, $t0
+	sw $ra, 12($sp)
+	jal search_adfgvx_grid
+	lw $ra, 12($sp)
+	
+	# call get_adfgvx_coords
+	move $a0, $v0
+	move $a1, $v1
+	sw $ra, 12($sp)
+	jal get_adfgvx_coords
+	lw $ra, 12($sp)
+	
+	# store in buffer
+	sb $v0, 0($s2)
+	sb $v1, 1($s2)
+	
+	addi $s1, $s1, 1
+	addi $s2, $s2, 2
+	j map_plaintext_loop
 
-jr $ra
+map_plaintext_exit:
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	addi $sp, $sp, 16
+	jr $ra
 
 
+	#sw $ra, 12($sp)
+	#lw $ra, 12($sp)
 #####################################################################
 # Part IV
 swap_matrix_columns:
