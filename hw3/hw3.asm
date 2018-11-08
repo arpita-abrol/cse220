@@ -181,8 +181,10 @@ swap_matrix_columns:
 	move $t0, $a3
 	move $a3, $t1
 	
+	
 swap_matrix_columns_cont:
 	# arguements are valid...
+	#move $t9, $a0
 	li $v0, 0
 	li $t2, 0	# row ctr
 	li $t3, -1	# col ctr
@@ -240,6 +242,12 @@ swap_matrix_columns_loop:
 	
 
 swap_matrix_columns_exit:
+#move $a0, $t9
+#li $v0, 4
+#syscall
+#li $a0, '\n'
+#li $v0, 11
+#syscall
 	jr $ra
 
 
@@ -247,10 +255,138 @@ swap_matrix_columns_exit:
 # Part V
 # void key_sort_matrix(char[][] matrix, int num_rows, int num_cols, T[] key, int elem_size)
 key_sort_matrix:
-li $v0, -200
-li $v1, -200
+	# variable for fifth arg
+	lb $t0, 0($sp)
+	
+	# store stack
+	addi $sp, $sp, -32
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
+	sw $s6, 24($sp)
+	sw $s7, 28($sp)
+	
+	# store all args in stack
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	move $s7, $a3
+	move $s4, $t0
+	
+	li $s5, 0	# ctr... i
+	li $s6, 0	# ctr... j
+	
+	beq $s4, 4, key_sort_matrix_loop_word
+	
+key_sort_matrix_loop:
+	beq $s5, $s2, key_sort_matrix_exit
+	
+	move $s3, $s7	# reset array
+	li $s6, 0
+	key_sort_matrix_loop_two:
+		move $t2, $s2
+		sub $t2, $t2, $s5
+		addi $t2, $t2, -1
+		bge $s6, $t2, key_sort_matrix_loop_resume
+		
+		# get key[j] and key[j+1]
+		lb $t0, ($s3)
+		add $s3, $s3, $s4
+		lb $t1, ($s3)
+	
+		ble $t0, $t1, key_sort_matrix_loop_two_increment
+		# swap pos in key
+		sb $t0, ($s3)
+		sub $s3, $s3, $s4
+		sb $t1, ($s3)
+		add $s3, $s3, $s4
+		
+		# swap cols
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		move $a3, $s6
+		addi $s6, $s6, 1
+		addi $sp, $sp, -8
+		sw $s6, 0($sp)
+		sw $ra, 4($sp)
+		jal swap_matrix_columns
+		lw $ra, 4($sp)
+		addi $sp, $sp, 8
+		addi $s6, $s6, -1
+		
+		key_sort_matrix_loop_two_increment:
+		addi $s6, $s6, 1
+		j key_sort_matrix_loop_two
+	
+	key_sort_matrix_loop_resume:
+	
+	addi $s5, $s5, 1
+	j key_sort_matrix_loop
+	
+key_sort_matrix_loop_word:
+	beq $s5, $s2, key_sort_matrix_exit
+	
+	move $s3, $s7	# reset array
+	li $s6, 0
+	key_sort_matrix_loop_two_word:
+		move $t2, $s2
+		sub $t2, $t2, $s5
+		addi $t2, $t2, -1
+		bge $s6, $t2, key_sort_matrix_loop_resume_word
+		
+		# get key[j] and key[j+1]
+		lw $t0, ($s3)
+		add $s3, $s3, $s4
+		lw $t1, ($s3)
+	
+		ble $t0, $t1, key_sort_matrix_loop_two_increment_word
+		# swap pos in key
+		sw $t0, ($s3)
+		sub $s3, $s3, $s4
+		sw $t1, ($s3)
+		add $s3, $s3, $s4
+		
+		# swap cols
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		move $a3, $s6
+		addi $s6, $s6, 1
+		addi $sp, $sp, -8
+		sw $s6, 0($sp)
+		sw $ra, 4($sp)
+		jal swap_matrix_columns
+		lw $ra, 4($sp)
+		addi $sp, $sp, 8
+		addi $s6, $s6, -1
+		
+		key_sort_matrix_loop_two_increment_word:
+		addi $s6, $s6, 1
+		j key_sort_matrix_loop_two_word
+	
+	key_sort_matrix_loop_resume_word:
+	
+	addi $s5, $s5, 1
+	j key_sort_matrix_loop_word
 
-jr $ra
+key_sort_matrix_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	lw $s6, 24($sp)
+	lw $s7, 28($sp)
+	addi $sp, $sp, -32
+	# exit
+	jr $ra
 
 
 #####################################################################

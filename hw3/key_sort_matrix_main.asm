@@ -24,6 +24,16 @@ li $a0, '\n'
 li $v0, 11
 syscall
 
+la $a0, key1
+li $v0, 4
+syscall
+li $a0, '\n'
+li $v0, 11
+syscall
+li $a0, '\n'
+li $v0, 11
+syscall
+
 la $a0, matrix2
 li $a1, 4
 li $a2, 5
@@ -40,6 +50,20 @@ syscall
 li $a0, '\n'
 li $v0, 11
 syscall
+
+la $t0, key2
+loop:
+	lw $a0, ($t0)
+	beqz $a0, loop_exit
+	li $v0, 1
+	syscall
+	li $a0, ' '
+	li $v0, 11
+	syscall
+	addi $t0, $t0, 4
+	j loop
+
+loop_exit:
 
 li $v0, 10
 syscall
