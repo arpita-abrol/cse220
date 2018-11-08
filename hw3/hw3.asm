@@ -390,13 +390,41 @@ key_sort_matrix_exit:
 
 
 #####################################################################
-# Part IV
+# Part VI
 # int transpose(char[][] matrix_src, char[][] matrix_dest, int num_rows, int num_cols)
 transpose:
-li $v0, -200
-li $v1, -200
-
-jr $ra
+	
+	# error checking
+	li $v0, -1
+	blez $a2, transpose_exit
+	blez $a3, transpose_exit
+	
+	# error checking complete
+	li $v0, 0
+	
+	li $t0, 0	# row counter
+	li $t1, 0	# col ctr
+	move $t3, $a0	# copy init pos
+	
+transpose_loop:
+	beq $t1, $a3, transpose_exit
+	move $a0, $t3
+	li $t0, 0
+	transpose_row_loop:
+		beq $t0, $a2, transpose_row_exit
+		lbu $t2, ($a0)
+		sb $t2, ($a1)
+		addi $t0, $t0, 1
+		add $a0, $a0, $a3
+		addi $a1, $a1, 1
+		j transpose_row_loop
+	transpose_row_exit:
+	addi $t3, $t3, 1
+	addi $t1, $t1, 1
+	j transpose_loop
+	
+transpose_exit:
+	jr $ra
 
 
 #####################################################################
