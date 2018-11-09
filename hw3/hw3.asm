@@ -632,8 +632,53 @@ get_one_adfgvx_char:
 	jr $ra
 #####################################################################
 # Part IX
-# void string_sort(String str
+# void string_sort(String str)
 string_sort:
+
+	li $t0, 0	# length n of str
+	move $t1, $a0
+
+string_sort_length:
+	lb $t2, ($t1)
+	beqz $t2, string_sort_length_exit
+	addi $t0, $t0, 1
+	addi $t1, $t1, 1
+	j string_sort_length
+	
+string_sort_length_exit:
+	li $t1, 0	# $t1 = i
+	
+string_sort_loop:
+	beq $t1, $t0, string_sort_exit
+	
+	move $t4, $a0	# reset array
+	li $t2, 0	# $t2, j
+	string_sort_loop_two:
+		move $t3, $t0		# $t3 = n
+		sub $t3, $t3, $t1	# n - i
+		addi $t3, $t3, -1	# n - i - 1
+		bge $t2, $t3, string_sort_loop_resume
+		
+		# get key[j] and key[j+1]
+		lb $t5, ($t4)
+		addi $t4, $t4, 1
+		lb $t6, ($t4)
+	
+		ble $t5, $t6, string_sort_loop_two_increment
+		# swap pos in key
+		sb $t5, ($t4)
+		addi $t4, $t4, -1
+		sb $t6, ($t4)
+		addi $t4, $t4, 1
+		
+		string_sort_loop_two_increment:
+		addi $t2, $t2, 1
+		j string_sort_loop_two
+	
+	string_sort_loop_resume:
+	
+	addi $t1, $t1, 1
+	j string_sort_loop
 	
 string_sort_exit:
 	jr $ra
@@ -641,11 +686,14 @@ string_sort_exit:
 
 #####################################################################
 # Part X
+# void decrypt(char[][] adfgvx_grid, String ciphertext, String keyword, String plaintext)
 decrypt:
-li $v0, -200
-li $v1, -200
-
-jr $ra
+	li $v0, -200
+	li $v1, -200
+	
+	
+decrypt_exit:
+	jr $ra
 
 #####################################################################
 ############### DO NOT CREATE A .data SECTION! ######################
