@@ -560,13 +560,76 @@ encrypt_exit:
 
 #####################################################################
 # Part VIII
+# (int, char) lookup_char(char[][] adfgvx_grid, char row_char, char col_char)
 lookup_char:
-li $v0, -200
-li $v1, -200
+	# store stack
+	addi $sp, $sp, -16
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	
+	# move args to s registers
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	# get index of chars
+	move $a0, $s1
+	sw $ra, 12($sp)
+	jal get_one_adfgvx_char
+	lw $ra, 12($sp)
+	move $s1, $v0
+	
+	move $a0, $s2
+	sw $ra, 12($sp)
+	jal get_one_adfgvx_char
+	lw $ra, 12($sp)
+	move $s2, $v0
+	
+	# index checking
+	li $v0, -1
+	beq $s1, -1, lookup_char_exit
+	beq $s2, -1, lookup_char_exit
+	
+	li $v0, 0	# error checking passed
+	
+	# get char from grid
+	li $t0, 6		# row_size
+	mult $s1, $t0
+	mflo $t0
+	add $t0, $t0, $s2
+	
+	add $s0, $s0, $t0
+	lb $v1, ($s0)
 
-jr $ra
+lookup_char_exit:
+	jr $ra
 
-
+# helper function
+# (int) get_one_adfgvx_char( char )
+get_one_adfgvx_char:
+	li $t0, 'A'
+	li $t1, 0
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t0, 'D'
+	li $t1, 1
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t0, 'F'
+	li $t1, 2
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t0, 'G'
+	li $t1, 3
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t0, 'V'
+	li $t1, 4
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t0, 'X'
+	li $t1, 5
+	beq $a0, $t0, get_one_adfgvx_char_return
+	li $t1, -1	# not found
+	get_one_adfgvx_char_return:
+	move $v0, $t1
+	jr $ra
 #####################################################################
 # Part IX
 # void string_sort(String str
