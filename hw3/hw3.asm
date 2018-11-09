@@ -269,7 +269,7 @@ key_sort_matrix:
 	sw $s6, 24($sp)
 	sw $s7, 28($sp)
 	
-	# store all args in stack
+	# store all args in s registers
 	move $s0, $a0
 	move $s1, $a1
 	move $s2, $a2
@@ -384,7 +384,7 @@ key_sort_matrix_exit:
 	lw $s5, 20($sp)
 	lw $s6, 24($sp)
 	lw $s7, 28($sp)
-	addi $sp, $sp, -32
+	addi $sp, $sp, 32
 	# exit
 	jr $ra
 
@@ -429,11 +429,133 @@ transpose_exit:
 
 #####################################################################
 # Part VII
+# void encrypt(char[][] adfgvx_grid, String plaintext, String keyword, char[] ciphertext)
 encrypt:
-li $v0, -200
-li $v1, -200
+	# store stack
+	addi $sp, $sp, -32
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
+	sw $s6, 24($sp)
+	sw $s7, 28($sp)
+	
+	# store all args in s registers
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+# create heap_cipher_text
+# get length of plaintext * 2
+	li $t0, 0	# ctr
+	move $t1, $a1	# plaintext address
+encrypt_plaintext_loop:
+	lbu $t2, ($t1)
+	beqz $t2, encrypt_plaintext_exit
+	addi $t0, $t0, 2	# add 2 bc mapping will give two chars per input char
+	addi $t1, $t1, 1
+	j encrypt_plaintext_loop
 
-jr $ra
+encrypt_plaintext_exit:
+	# make the length of plaintext a multiple of the keyword size
+	
+	# get rows, cols of heap_ciphertext_array
+	# cols = length of keyword; $s6
+	# rows = length of plaintext * 2 / cols; $s5
+	li $s6, 0
+	move $t2, $s2	# $t2 = keyword address
+encrypt_keyword_length_loop:
+	lbu $t3, ($t2)
+	beqz $t3, encrypt_keyword_length_exit
+	addi $s6, $s6, 1
+	addi $t2, $t2, 1
+	j encrypt_keyword_length_loop
+
+encrypt_keyword_length_exit:	
+	div $t0, $s6	# length of plaintext * 2 / cols
+	mflo $s5	# set $s5 to quotient
+	# check for remainder
+	mfhi $t2
+	beqz $t2, encrypt_heap_ciphertext_array_create
+	addi $s5, $s5, 1
+	mult $s5, $s6
+	mflo $t0
+	
+encrypt_heap_ciphertext_array_create:
+	# create heap_ciphertext_array, $v0
+	move $s7, $t0	# save length of array
+	move $a0, $s7
+	li $v0, 9
+	syscall
+	
+	move $s4, $v0	# heap_ciphertext_array address
+	li $t1, '*'	# set to asterik
+	
+# fill heap_ciphertext_array with asteriks
+encrypt_heap_ciphertext_array_fill_loop:
+	beqz $t0, encrypt_heap_ciphertext_array_fill_exit
+	sb $t1, ($v0)
+	addi $v0, $v0, 1	# move to next byte
+	addi $t0, $t0, -1	# decrement counter
+	j encrypt_heap_ciphertext_array_fill_loop
+	
+encrypt_heap_ciphertext_array_fill_exit:
+	# call map_plaintext
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s4	# set $a2 to buffer
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal map_plaintext
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	# call key_sort_matrix
+	move $a0, $s4	# matrix = heap_ciphertext_array
+	move $a1, $s5	# num_rows
+	move $a2, $s6	# num_cols
+	move $a3, $s2	# key
+	addi $sp, $sp, -8
+	li $t0, 1	# elem_size
+	sw $t0, 0($sp)
+	sw $ra, 4($sp)
+	jal key_sort_matrix
+	lw $ra, 4($sp)
+	addi $sp, $sp, 8
+	
+	# transpose the matriz
+	move $a0, $s4	# matrix_source
+	move $a1, $s3	# matrix dest
+	move $a2, $s5	# num_rows
+	move $a3, $s6	# num_cols
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal transpose
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	# null-terminate ciphertext
+	add $s3, $s3, $s7
+	li $t0, '\0'
+	sb $t0, ($s3)
+	
+
+encrypt_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	lw $s6, 24($sp)
+	lw $s7, 28($sp)
+	addi $sp, $sp, 32
+	# exit
+	jr $ra
 
 
 #####################################################################
@@ -447,11 +569,11 @@ jr $ra
 
 #####################################################################
 # Part IX
+# void string_sort(String str
 string_sort:
-li $v0, -200
-li $v1, -200
-
-jr $ra
+	
+string_sort_exit:
+	jr $ra
 
 
 #####################################################################
