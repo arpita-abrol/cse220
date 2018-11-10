@@ -14,10 +14,6 @@ sw $t0, 0($sp)
 jal swap_matrix_columns
 addi $sp, $sp, 4
 
-move $a0, $v0
-li $v0, 1
-syscall
-
 # expected: SQIPOT4NJZLUCAGHEVX7KW3Y
 la $a0, chars
 li $v0, 4

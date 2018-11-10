@@ -603,6 +603,12 @@ lookup_char:
 	lb $v1, ($s0)
 
 lookup_char_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	addi $sp, $sp, 16
+	# exit
 	jr $ra
 
 # helper function
@@ -639,7 +645,7 @@ string_sort:
 	move $t1, $a0
 
 string_sort_length:
-	lb $t2, ($t1)
+	lbu $t2, ($t1)
 	beqz $t2, string_sort_length_exit
 	addi $t0, $t0, 1
 	addi $t1, $t1, 1
@@ -688,11 +694,210 @@ string_sort_exit:
 # Part X
 # void decrypt(char[][] adfgvx_grid, String ciphertext, String keyword, String plaintext)
 decrypt:
-	li $v0, -200
-	li $v1, -200
+	# store stack
+	addi $sp, $sp, -32
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	sw $s5, 20($sp)
+	sw $s6, 24($sp)
+	sw $s7, 28($sp)
 	
+	# store all args in s registers
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	#  use sbrk to copy keyword, heap_keyword
+	li $t0, 0	# length n of str
+	move $t1, $s2
+
+decrypt_keyword_length:
+	lb $t2, ($t1)
+	beqz $t2, decrypt_keyword_length_exit
+	addi $t0, $t0, 1
+	addi $t1, $t1, 1
+	j decrypt_keyword_length
+	
+decrypt_keyword_length_exit:
+	move $a0, $t0
+	li $v0, 9
+	syscall
+	move $s4, $v0	# set $s4 to heap_keyword
+	
+	move $t1, $s2
+decrypt_keyword_copy_loop:
+	lbu $t2, 0($t1)
+	beqz $t2, decrypt_keyword_copy_exit
+	sb $t2, 0($s4)
+	addi $t1, $t1, 1
+	addi $s4, $s4, 1
+	j decrypt_keyword_copy_loop
+
+decrypt_keyword_copy_exit:
+	move $s7, $t0	# store keyword length
+	# reset
+	sub $s4, $s4, $s7
+	
+	# call string_sort on heap_keyword
+	move $a0, $s4
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal string_sort
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	# use sbrk to create heap_keyword_indices
+	move $a0, $t0
+	li $v0, 9
+	syscall
+	move $s5, $v0	# $s5 = heap_keyword_indices = new int[size]
+	
+	li $s6, 0	# counter
+# 'undo' heap sorting
+decrypt_heap_keyword_indices_fill_loop:
+	beq $s6, $s7, decrypt_heap_keyword_indices_fill_exit
+	lbu $t1, ($s4)
+	# call index_of
+	move $a0, $s2
+	move $a1, $t1
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal index_of
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	sb $v0, ($s5)
+	
+	# increment
+	addi $s6, $s6, 1
+	addi $s4, $s4, 1
+	addi $s5, $s5, 1
+	j decrypt_heap_keyword_indices_fill_loop
+		
+decrypt_heap_keyword_indices_fill_exit:	
+	# reset $s4, $s5
+	sub $s4, $s4, $s7
+	sub $s5, $s5, $s7
+	
+# get size of ciphertext (to get num cols... num rows = size keyword = $s7)
+	li $t0, 0	# length n of str
+	move $t1, $s1
+
+decrypt_ciphertext_length:
+	lbu $t2, ($t1)
+	beqz $t2, decrypt_ciphertext_length_exit
+	addi $t0, $t0, 1
+	addi $t1, $t1, 1
+	j decrypt_ciphertext_length
+	
+decrypt_ciphertext_length_exit:
+	div $t0, $s7	# length of ciphertext / rows
+	mflo $s6	# set $s6 to quotient
+	# check for remainder
+	mfhi $t2
+	beqz $t2, decrypt_ciphertext_transpose
+	addi $s6, $s6, 1
+	
+# transpose the ciphertext
+decrypt_ciphertext_transpose:
+	# create heap_ciphertext_array
+	move $a0, $t0
+	li $v0, 9
+	syscall
+	# call transpose
+	move $a0, $s1
+	move $a2, $s7
+	move $a3, $s6
+	
+	move $s2, $s7	# $s2 = num_rows (num_cols after transpose)
+	
+	move $s7, $v0	# replace num_rows with heap_ciphertext_array
+	move $a1, $s7
+	
+	move $s1, $s6	# $s1 = num_cols (num_rows after transpose)
+	
+	move $s6, $t0	# replace num_cols with length of ciphertext
+	
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal transpose
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	
+	# "unsort" the matrix
+	move $a0, $s7	# key_sort_matrix
+	move $a1, $s1
+	move $a2, $s2
+	move $a3, $s5	# heap_keyword_indices
+	addi $sp, $sp, -8
+	li $t0, 1	# elem_size
+	sw $t0, 0($sp)
+	sw $ra, 4($sp)
+	jal key_sort_matrix
+	lw $ra, 4($sp)
+	addi $sp, $sp, 8
+	
+	li $s1, 0
+	
+# decode heap_ciphertext_array
+decrypt_decode_loop:
+	beq $s1, $s6, decrypt_exit
+	# read out the ADFGVX characters as pair
+	lbu $a1, ($s7)
+	lbu $a2, 1($s7)
+	li $t2, '*'
+	beq $t2, $a1, decrypt_exit	# check if finished
+	
+	# decode using lookup_char
+	move $a0, $s0
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	jal lookup_char
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4
+	# append to plaintext
+	sb $v1, ($s3)
+	
+	addi $s1, $s1, 2
+	addi $s7, $s7, 2
+	addi $s3, $s3, 1
+	j decrypt_decode_loop
 	
 decrypt_exit:
+	# append null terminator
+	li $t0, '\0'
+	sb $t0, 0($s3)
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	lw $s5, 20($sp)
+	lw $s6, 24($sp)
+	lw $s7, 28($sp)
+	addi $sp, $sp, 32
+	# exit
+	jr $ra
+	
+# helper function
+# (int) index_of( String keyword, char target )
+index_of:
+	li $t0, 0	# ctr
+	
+index_of_loop:
+	lbu $t1, ($a0)
+	beq $t1, $a1, index_of_exit
+	addi $t0, $t0, 1
+	addi $a0, $a0, 1
+	j index_of_loop
+	
+index_of_exit:
+	move $v0, $t0
+	# exit
 	jr $ra
 
 #####################################################################
