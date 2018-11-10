@@ -52,15 +52,17 @@ li $v0, 11
 syscall
 
 la $t0, key2
+li $t1, 5
 loop:
 	lw $a0, ($t0)
-	beqz $a0, loop_exit
+	beqz $t1, loop_exit
 	li $v0, 1
 	syscall
 	li $a0, ' '
 	li $v0, 11
 	syscall
 	addi $t0, $t0, 4
+	addi $t1, $t1, -1
 	j loop
 
 loop_exit:

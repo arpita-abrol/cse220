@@ -1,7 +1,7 @@
 .text
 .globl main
 main:
-li $a0, 6
+li $a0, 5
 li $a1, 2
 jal get_adfgvx_coords
 

@@ -1,7 +1,7 @@
 .data
 adfgvx_grid: .asciiz "QWE3RT0YU2IO4PLK9J1HGF5DSAZ86XCVB7NM"
 row_char: .byte 'V'
-col_char: .byte 'V'
+col_char: .byte 'p'
 
 .text
 .globl main

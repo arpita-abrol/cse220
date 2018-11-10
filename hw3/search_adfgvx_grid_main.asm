@@ -5,7 +5,7 @@ adfgvx_grid: .asciiz "QWE3RT0YU2IO4PLK9J1HGF5DSAZ86XCVB7NM"
 .globl main
 main:
 la $a0, adfgvx_grid
-li $a1, 'M'
+li $a1, 'X'
 jal search_adfgvx_grid
 
 move $a0, $v0
