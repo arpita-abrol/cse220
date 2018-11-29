@@ -235,9 +235,28 @@ init_game_exit:
 #####################################################################
 # Part II
 is_valid_cell:
-li $v0, -200
-li $v1, -200
-jr $ra
+# int is_valid_cell(Map *map_ptr, int row, int col
+	move $t0, $a0
+	move $t1, $a1
+	move $t2, $a2
+	
+	lbu $t3, 0($a0)
+    	lbu $t4, 1($a0)
+    	
+    	
+	li $v0, -1
+	# error checking
+	bltz $t1, is_valid_call_exit
+	bge $t1, $t3, is_valid_call_exit
+	bltz $t2, is_valid_call_exit
+	bge $t2, $t4, is_valid_call_exit
+	
+	
+	# error checking complete... is valid
+	li $v0, 0
+	
+is_valid_call_exit:
+	jr $ra
 
 
 #####################################################################

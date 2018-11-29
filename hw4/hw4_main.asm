@@ -201,6 +201,16 @@ la $a1, map
 la $a2, player
 jal init_game
 
+# testing... part II---------------------------------
+la $a0, map
+li $a1, 7
+li $a2, 24
+jal is_valid_cell
+
+#move $a0, $v0
+#li $v0, 1
+#syscall
+
 # fill in arguments
 jal reveal_area
 
