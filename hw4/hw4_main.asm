@@ -221,6 +221,17 @@ jal get_cell
 #li $v0, 1
 #syscall
 
+# testing... part IV---------------------------------
+la $a0, map
+li $a1, 6
+li $a2, 24
+li $a3, 0x2E
+jal set_cell
+
+#move $a0, $v0
+#li $v0, 1
+#syscall
+
 # fill in arguments
 #jal reveal_area
 
@@ -228,7 +239,7 @@ li $s0, 0  # move = 0
 
 game_loop:  # while player is not dead and move == 0:
 
-#jal print_map # takes no args
+jal print_map # takes no args
 
 #jal print_player_info # takes no args
 
