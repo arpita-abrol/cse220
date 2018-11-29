@@ -261,10 +261,49 @@ is_valid_call_exit:
 
 #####################################################################
 # Part III
+# int get_cell(Map *map_ptr, int row, int col
 get_cell:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -16
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	# call is_valid_cell
+	sw $ra, 12($sp)
+	jal is_valid_cell
+	lw $ra, 12($sp)
+	bltz $v0, get_cell_exit
+	
+	# call is valid
+	lbu $t0, 1($s0)	# $t0 = col length
+	mult $t0, $s1	# col length * target row
+	mflo $t0
+	add $t0, $t0, $a2	# col length * target row + target col
+	
+	addi $s0, $s0, 2
+	
+	get_cell_loop:
+		beqz $t0,  get_cell_loop_exit
+		addi $t0, $t0, -1
+		addi $s0, $s0, 1
+		j get_cell_loop
+	
+	get_cell_loop_exit:
+	lbu $v0, 0($s0)
+
+get_cell_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	addi $sp, $sp, 16
+	jr $ra
 
 
 #####################################################################

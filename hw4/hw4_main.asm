@@ -211,16 +211,26 @@ jal is_valid_cell
 #li $v0, 1
 #syscall
 
+# testing... part III---------------------------------
+la $a0, map
+li $a1, 4
+li $a2, 6
+jal get_cell
+
+#move $a0, $v0
+#li $v0, 1
+#syscall
+
 # fill in arguments
-jal reveal_area
+#jal reveal_area
 
 li $s0, 0  # move = 0
 
 game_loop:  # while player is not dead and move == 0:
 
-jal print_map # takes no args
+#jal print_map # takes no args
 
-jal print_player_info # takes no args
+#jal print_player_info # takes no args
 
 # print prompt
 la $a0, your_move_str
