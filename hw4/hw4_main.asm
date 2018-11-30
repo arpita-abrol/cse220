@@ -248,6 +248,13 @@ jal get_attack_target
 #li $v0, 1
 #syscall
 
+# testing part VII---------------------------------
+la $a0, map
+la $a1, player
+li $a2, 4
+li $a3, 2
+jal complete_attack
+
 # fill in arguments part V---------------------------------
 #jal reveal_area
 
@@ -255,7 +262,7 @@ li $s0, 0  # move = 0
 
 game_loop:  # while player is not dead and move == 0:
 
-#jal print_map # takes no args
+jal print_map # takes no args
 
 #jal print_player_info # takes no args
 

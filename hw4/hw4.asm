@@ -495,10 +495,99 @@ get_attack_target_exit:
 
 #####################################################################
 # Part VII
+# void complete_attack(Map *map_ptr, Player *player_ptr, int target_row, int target_col)
 complete_attack:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -20
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# call get_cell
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	sw $ra, 16($sp)
+	jal get_cell
+	lw $ra, 16($sp)
+	
+	# case 1 -- 'm'
+	bne $v0, 'm', complete_attack_check_two
+	# call set_cell
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	li $a3, '$'
+	sw $ra, 16($sp)
+	jal set_cell
+	lw $ra, 16($sp)
+	# update player health
+	lbu $t0, 2($s1)
+	addi $t0, $t0, -1
+	sb $t0, 2($s1)
+	
+	j complete_attack_check_dead
+	
+	# case 2 -- 'B'
+	complete_attack_check_two:
+	bne $v0, 'B', complete_attack_check_three
+	# call set_cell
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	li $a3, '*'
+	sw $ra, 16($sp)
+	jal set_cell
+	lw $ra, 16($sp)
+	# update player health
+	lbu $t0, 2($s1)
+	addi $t0, $t0, -2
+	sb $t0, 2($s1)
+	
+	j complete_attack_check_dead
+	
+	# case 3 -- '/'
+	complete_attack_check_three:
+	# call set_cell
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	li $a3, '.'
+	sw $ra, 16($sp)
+	jal set_cell
+	lw $ra, 16($sp)
+	j complete_attack_exit
+	
+	complete_attack_check_dead:
+	lbu $t0, 2($s1)
+	bgtz $t0, complete_attack_exit
+	# player is dead... update location on map
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	# call set_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	li $a3, 'X'
+	sw $ra, 16($sp)
+	jal set_cell
+	lw $ra, 16($sp)
+	
+complete_attack_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	addi $sp, $sp, 20
+	jr $ra
 
 #####################################################################
 # Part VIII
