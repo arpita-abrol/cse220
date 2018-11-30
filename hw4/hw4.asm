@@ -591,10 +591,117 @@ complete_attack_exit:
 
 #####################################################################
 # Part VIII
+# int monster_attacks(Map *map_ptr, Player *player_ptr)
 monster_attacks:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -16
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+
+	# preserve args
+	move $s0, $a0
+	move $s1, $a1
+	
+	# counter
+	li $s2, 0
+
+	# check up
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	addi $t0, $t0, -1
+	# call get_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	sw $ra, 12($sp)
+	jal get_cell
+	lw $ra, 12($sp)
+	# call monster_attacks_get_damage
+	move $a0, $v0
+	sw $ra, 12($sp)
+	jal monster_attacks_get_damage
+	lw $ra, 12($sp)
+	# add damage
+	add $s2, $s2, $v0
+	
+	# check down
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	addi $t0, $t0, 1
+	# call get_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	sw $ra, 12($sp)
+	jal get_cell
+	lw $ra, 12($sp)
+	# call monster_attacks_get_damage
+	move $a0, $v0
+	sw $ra, 12($sp)
+	jal monster_attacks_get_damage
+	lw $ra, 12($sp)
+	# add damage
+	add $s2, $s2, $v0
+	
+	# check left
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	addi $t1, $t1, -1
+	# call get_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	sw $ra, 12($sp)
+	jal get_cell
+	lw $ra, 12($sp)
+	# call monster_attacks_get_damage
+	move $a0, $v0
+	sw $ra, 12($sp)
+	jal monster_attacks_get_damage
+	lw $ra, 12($sp)
+	# add damage
+	add $s2, $s2, $v0
+	
+	# check right
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	addi $t1, $t1, 1
+	# call get_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	sw $ra, 12($sp)
+	jal get_cell
+	lw $ra, 12($sp)
+	# call monster_attacks_get_damage
+	move $a0, $v0
+	sw $ra, 12($sp)
+	jal monster_attacks_get_damage
+	lw $ra, 12($sp)
+	# add damage
+	add $s2, $s2, $v0
+	
+	# edit return value
+	move $v0, $s2
+	
+monster_attacks_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	addi $sp, $sp, 16
+	jr $ra
+
+# helper function...
+monster_attacks_get_damage:
+	li $v0, 1
+	beq $a0, 'm', monster_attacks_get_damage_exit
+	li $v0, 2	
+	beq $a0, 'B', monster_attacks_get_damage_exit
+	li $v0, 0
+monster_attacks_get_damage_exit:
+	jr $ra
 
 #####################################################################
 # Part IX

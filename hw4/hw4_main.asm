@@ -241,7 +241,7 @@ jal reveal_area
 # testing part VI---------------------------------
 la $a0, map
 la $a1, player
-li $a2, 'D'
+li $a2, 'L'
 jal get_attack_target
 
 #move $a0, $v0
@@ -251,9 +251,18 @@ jal get_attack_target
 # testing part VII---------------------------------
 la $a0, map
 la $a1, player
-li $a2, 4
+li $a2, 2
 li $a3, 2
 jal complete_attack
+
+# testing part VIII---------------------------------
+la $a0, map
+la $a1, player
+jal monster_attacks
+
+move $a0, $v0
+li $v0, 1
+syscall
 
 # fill in arguments part V---------------------------------
 #jal reveal_area
