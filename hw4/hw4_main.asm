@@ -232,17 +232,30 @@ jal set_cell
 #li $v0, 1
 #syscall
 
-# fill in arguments part V---------------------------------
+# testing part V---------------------------------
 la $a0, map
-li $a1, 6
-li $a2, 24
+li $a1, 3
+li $a2, 2
 jal reveal_area
+
+# testing part VI---------------------------------
+la $a0, map
+la $a1, player
+li $a2, 'D'
+jal get_attack_target
+
+#move $a0, $v0
+#li $v0, 1
+#syscall
+
+# fill in arguments part V---------------------------------
+#jal reveal_area
 
 li $s0, 0  # move = 0
 
 game_loop:  # while player is not dead and move == 0:
 
-jal print_map # takes no args
+#jal print_map # takes no args
 
 #jal print_player_info # takes no args
 

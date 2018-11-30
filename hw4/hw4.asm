@@ -431,10 +431,67 @@ reveal_area_exit:
 
 #####################################################################
 # Part VI
+# int get_attack_target(Map *map_ptr, Player *player_ptr, char direction)
 get_attack_target:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -16
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	lbu $t0, 0($s1)	# row
+	lbu $t1, 1($s1)	# col
+	
+	beq $s2, 'U', get_attack_target_up
+	beq $s2, 'D', get_attack_target_down
+	beq $s2, 'L', get_attack_target_left
+	beq $s2, 'R', get_attack_target_right
+	# if program comes here, direction is invalid
+	li $v0, -1
+	j get_attack_target_exit
+	
+get_attack_target_up:
+	addi $t0, $t0, -1
+	j get_attack_target_get
+get_attack_target_down:
+	addi $t0, $t0, 1
+	j get_attack_target_get
+get_attack_target_left:
+	addi $t1, $t1, -1
+	j get_attack_target_get
+get_attack_target_right:
+	addi $t1, $t1, 1
+	j get_attack_target_get
+
+get_attack_target_get:
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	sw $ra, 12($sp)
+	jal get_cell
+	lw $ra, 12($sp)
+	
+	# check if valid...
+	beq $v0, 'm', get_attack_target_exit
+	beq $v0, 'B', get_attack_target_exit
+	beq $v0, '/', get_attack_target_exit
+	
+	# if program comes here, cell is invalid or not m B /
+	li $v0, -1
+
+get_attack_target_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	addi $sp, $sp, 16
+	jr $ra
 
 #####################################################################
 # Part VII
