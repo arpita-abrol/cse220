@@ -359,10 +359,75 @@ set_cell_exit:
 
 #####################################################################
 # Part V
+# void reveal_area(Map *map_ptr, int row, int col)
 reveal_area:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -20
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	
+	# set row, col to top left of 3x3
+	addi $s1, $s1, -2
+	addi $s2, $s2, 2
+    	
+    	li $s3, 9	# ctr
+    	reveal_area_loop:
+    		beqz $s3, reveal_area_exit
+    		li $t0, 3
+    		div $s3, $t0
+    		mfhi $t0
+    		bnez $t0, reveal_loop_cont
+    		addi $s1, $s1, 1
+    		addi $s2, $s2, -3
+    		
+    		reveal_loop_cont:
+    		# call get_cell
+    		move $a0, $s0
+    		move $a1, $s1
+    		move $a2, $s2
+    		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+		bltz $v0, reveal_loop_next
+		move $t0, $v0
+		
+	
+		li $t1, 0x80
+		and $t2, $t0, $t1
+		beqz $t2, reveal_loop_next
+		
+		xor $t0, $t0, $t1
+		
+		# call set_cell
+		move $a0, $s0
+    		move $a1, $s1
+    		move $a2, $s2
+    		move $a3, $t0
+    		sw $ra, 16($sp)
+		jal set_cell
+		lw $ra, 16($sp)
+			
+    		reveal_loop_next:
+    		addi $s2, $s2, 1
+    		addi $s3, $s3, -1
+    		j reveal_area_loop
+    		
+
+reveal_area_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	addi $sp, $sp, 20
+	jr $ra
 
 #####################################################################
 # Part VI

@@ -232,8 +232,11 @@ jal set_cell
 #li $v0, 1
 #syscall
 
-# fill in arguments
-#jal reveal_area
+# fill in arguments part V---------------------------------
+la $a0, map
+li $a1, 6
+li $a2, 24
+jal reveal_area
 
 li $s0, 0  # move = 0
 
