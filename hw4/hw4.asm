@@ -489,7 +489,6 @@ get_attack_target_exit:
 	lw $s0, 0($sp)
 	lw $s1, 4($sp)
 	lw $s2, 8($sp)
-	lw $s3, 12($sp)
 	addi $sp, $sp, 16
 	jr $ra
 
@@ -705,24 +704,472 @@ monster_attacks_get_damage_exit:
 
 #####################################################################
 # Part IX
+# int player_move(Map *map_ptr, Player *player_ptr, int target_row, int target_col)
 player_move:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -24
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# call monster_attacks
+	sw $ra, 20($sp)
+	jal monster_attacks
+	lw $ra, 20($sp)
+	
+	# update health; check if player dead
+	lbu $t0, 2($s1)
+	sub $t0, $t0, $v0
+	sb $t0, 2($s1)
+	blez $t0, player_move_dead
+	
+	# player does not die... check cell
+	# get target cell
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	sw $ra, 20($sp)
+	jal get_cell
+	lw $ra, 20($sp)
+	move $s4, $v0
+	
+	# ./$/*/> = target---------------------------------------
+	
+	# get player coords
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	li $a3, '.'
+	sw $ra, 20($sp)
+	jal set_cell
+	lw $ra, 20($sp)
+	
+	move $a0, $s0
+	move $a1, $s2
+	move $a2, $s3
+	li $a3, '@'
+	sw $ra, 20($sp)
+	jal set_cell
+	lw $ra, 20($sp)
+	
+	# store new coords
+	sb $s2, 0($s1)
+	sb $s3, 1($s1)
+	
+	li $v0, 0
+	
+	bne $s4, '$', player_move_check_four
+	lbu $t0, 3($s1)
+	addi $t0, $t0, 1
+	sb $t0, 3($s1)
+	j player_move_exit
+	
+	player_move_check_four:
+	bne $s4, '*', player_move_check_five
+	lbu $t0, 3($s1)
+	addi $t0, $t0, 5
+	sb $t0, 3($s1)
+	j player_move_exit
+	
+	player_move_check_five:
+	bne $s4, '>', player_move_exit
+	li $v0, -1
+	j player_move_exit
+
+# player is dead	
+player_move_dead:
+	lbu $t0, 0($s1)
+	lbu $t1, 1($s1)
+	# call set_cell
+	move $a0, $s0
+	move $a1, $t0
+	move $a2, $t1
+	li $a3, 'X'
+	sw $ra, 20($sp)
+	jal set_cell
+	lw $ra, 20($sp)
+	
+	li $v0, 0
+
+player_move_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	addi $sp, $sp, 24
+	jr $ra
 
 #####################################################################
 # Part X
+# int player_turn(Map *map_ptr, Player *player_ptr, char direction)
 player_turn:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -24
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	sw $s4, 16($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# step 1: check if direction is valid
+	li $v0, -1
+	lbu $s3, 0($s1)
+	lbu $s4, 1($s1)
+	bne $s2, 'U', player_turn_check_down
+	addi $s3, $s3, -1
+	j player_turn_valid_direction
+	player_turn_check_down:
+	bne $s2, 'D', player_turn_check_left
+	addi $s3, $s3, 1
+	j player_turn_valid_direction
+	player_turn_check_left:
+	bne $s2, 'L', player_turn_check_right
+	addi $s4, $s4, -1
+	j player_turn_valid_direction
+	player_turn_check_right:
+	bne $s2, 'R', player_turn_exit
+	addi $s4, $s4, 1
+	
+	player_turn_valid_direction:
+	# step 3: get_cell
+	move $a0, $s0
+	move $a1, $s3
+	move $a2, $s4
+	sw $ra, 20($sp)
+	jal get_cell
+	lw $ra, 20($sp)
+	
+	# step 2: check if target index valid
+	move $t0, $v0
+	li $v0, 0
+	bltz $t0, player_turn_exit
+	
+	# step 3 con't
+	beq $t0, '#', player_turn_exit
+	
+	# step 4
+	# call get_attack_target
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+	sw $ra, 20($sp)
+	jal get_attack_target
+	lw $ra, 20($sp)
+	
+	# check if it is attackable
+	bltz $v0, player_turn_move
+	# call complete_attack
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s3
+	move $a3, $s4
+	sw $ra, 20($sp)
+	jal complete_attack
+	lw $ra, 20($sp)
+	
+	li $v0, 0
+	j player_turn_exit
+	
+	# not attackable--move
+	player_turn_move:
+	# call player_move
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s3
+	move $a3, $s4
+	sw $ra, 20($sp)
+	jal player_move
+	lw $ra, 20($sp)
+	
+player_turn_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	lw $s4, 16($sp)
+	addi $sp, $sp, 24
+	jr $ra
 
 #####################################################################
 # Part XI
+# int flood_fill_reveal(Map *map_ptr, int row, int col, bit[][] visited)
 flood_fill_reveal:
-li $v0, -200
-li $v1, -200
-jr $ra
+	# store stack
+	addi $sp, $sp, -20
+	sw $s0, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	
+	# store args
+	move $s0, $a0
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+	
+	# check if row, col are valid
+	# call get_cell
+	li $v0, -1
+	move $a0, $s0
+	move $a1, $s1
+	move $a2, $s2
+		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+	bltz $v0, flood_fill_reveal_exit
+	
+	# store $sp
+	move $fp, $sp
+	sb $s1, 0($fp)	# row
+	sb $s2, 1($fp)	# col
+	addi $fp, $fp, 2
+	
+	
+	move $a0, $s3
+	move $a1, $s1
+	move $a2, $s2
+	lbu $a3, 1($s0)
+		sw $ra, 16($sp)
+		jal flood_fill_reveal_set
+		lw $ra, 16($sp)
+	
+	flood_fill_reveal_loop:
+		beq $sp, $fp, flood_fill_reveal_loop_exit
+		lbu $s2, -1($fp)	# col
+		lbu $s1, -2($fp)	# row
+		addi $fp, $fp, -1
+		
+		
+		# make visible
+		# call: set_cell
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		li $a3, '.'
+		sw $ra, 16($sp)
+		jal set_cell
+		lw $ra, 16($sp)
+		
+		# check up
+		addi $s1, $s1, -1
+		# call: get_cell
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+		beq $v0, '.', flood_fill_reveal_down_pre
+		bne $v0, 174, flood_fill_reveal_down
+		flood_fill_reveal_down_pre:
+		# call: is visited
+		move $a0, $s3
+		move $a1, $s1
+		move $a2, $s2
+		lbu $a3, 1($s0)
+		sw $ra, 16($sp)
+		jal flood_fill_reveal_set
+		lw $ra, 16($sp)
+		bnez $v0, flood_fill_reveal_down
+		# push new
+		sb $s1, 0($fp)	# row
+		sb $s2, 1($fp)	# col
+		addi $fp, $fp, 2
+		
+		flood_fill_reveal_down:
+		# check down
+		addi $s1, $s1, 2
+		# call: get_cell
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+		beq $v0, '.', flood_fill_reveal_left_pre
+		bne $v0, 174, flood_fill_reveal_left
+		flood_fill_reveal_left_pre:
+		# call: is visited
+		move $a0, $s3
+		move $a1, $s1
+		move $a2, $s2
+		lbu $a3, 1($s0)
+		sw $ra, 16($sp)
+		jal flood_fill_reveal_set
+		lw $ra, 16($sp)
+		bnez $v0, flood_fill_reveal_left
+		# push new
+		sb $s1, 0($fp)	# row
+		sb $s2, 1($fp)	# col
+		addi $fp, $fp, 2
+		
+		flood_fill_reveal_left:
+		# check left
+		addi $s2, $s2, -1
+		addi $s1, $s1, -1
+		# call: get_cell
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+		beq $v0, '.', flood_fill_reveal_right_pre
+		bne $v0, 174, flood_fill_reveal_right
+		flood_fill_reveal_right_pre:
+		# call: is visited
+		move $a0, $s3
+		move $a1, $s1
+		move $a2, $s2
+		lbu $a3, 1($s0)
+		sw $ra, 16($sp)
+		jal flood_fill_reveal_set
+		lw $ra, 16($sp)
+		bnez $v0, flood_fill_reveal_right
+		# push new
+		sb $s1, 0($fp)	# row
+		sb $s2, 1($fp)	# col
+		addi $fp, $fp, 2
+		
+		flood_fill_reveal_right:
+		# check right
+		addi $s2, $s2, 2
+		# call: get_cell
+		move $a0, $s0
+		move $a1, $s1
+		move $a2, $s2
+		sw $ra, 16($sp)
+		sw $ra, 16($sp)
+		jal get_cell
+		lw $ra, 16($sp)
+		lw $ra, 16($sp)
+		beq $v0, '.', flood_fill_reveal_done_pre
+		bne $v0, 174, flood_fill_reveal_done
+		flood_fill_reveal_done_pre:
+		# call: is visited
+		move $a0, $s3
+		move $a1, $s1
+		move $a2, $s2
+		lbu $a3, 1($s0)
+		sw $ra, 16($sp)
+		jal flood_fill_reveal_set
+		lw $ra, 16($sp)
+		bnez $v0, flood_fill_reveal_done
+		# push new
+		sb $s1, 0($fp)	# row
+		sb $s2, 1($fp)	# col
+		addi $fp, $fp, 2
+		
+		flood_fill_reveal_done:
+		j flood_fill_reveal_loop
+		
+	flood_fill_reveal_loop_exit:	
+	li $v0, 0
+	
+flood_fill_reveal_exit:
+	# restore stack
+	lw $s0, 0($sp)
+	lw $s1, 4($sp)
+	lw $s2, 8($sp)
+	lw $s3, 12($sp)
+	
+	addi $sp, $sp, 20
+	jr $ra
+	
+# $a0 = bit vector, $a1 = row, $a2 = col, $a3 = col_length, return = original value
+flood_fill_reveal_set:
+	li $t0, 0	# ctr
+	mult $a1, $a3
+	mflo $t0
+	add $t0, $t0, $a2
+	li $t1, 8
+	div $t0, $t1
+	mflo $t0
+	mfhi $t1
+	flood_fill_reveal_set_loop:
+		beqz $t0,  flood_fill_reveal_set_exit
+		addi $t0, $t0, -1
+		addi $a0, $a0, 1
+		j flood_fill_reveal_set_loop
+flood_fill_reveal_set_exit:
+	lb $t0, ($a0)
+	
+	bne $t1, 0, flood_fill_num_one
+	andi $t2, $t0, 0x01
+	move $v0, $t2
+	ori $t2, $t0, 0x01
+	j flood_fill_num_done
+	
+	flood_fill_num_one:
+	bne $t1, 1, flood_fill_num_two
+	andi $t2, $t0, 0x02
+	move $v0, $t2
+	ori $t2, $t0, 0x02
+	j flood_fill_num_done
+	
+	flood_fill_num_two:
+	bne $t1, 2, flood_fill_num_three
+	andi $t2, $t0, 0x04
+	move $v0, $t2
+	ori $t2, $t0, 0x04
+	j flood_fill_num_done
+	
+	flood_fill_num_three:
+	bne $t1, 3, flood_fill_num_four
+	andi $t2, $t0, 0x08
+	move $v0, $t2
+	ori $t2, $t0, 0x08
+	j flood_fill_num_done
+	
+	flood_fill_num_four:
+	bne $t1, 4, flood_fill_num_five
+	andi $t2, $t0, 0x10
+	move $v0, $t2
+	ori $t2, $t0, 0x10
+	j flood_fill_num_done
+	
+	flood_fill_num_five:
+	bne $t1, 5, flood_fill_num_six
+	andi $t2, $t0, 0x20
+	move $v0, $t2
+	ori $t2, $t0, 0x20
+	j flood_fill_num_done
+	
+	flood_fill_num_six:
+	bne $t1, 6, flood_fill_num_seven
+	andi $t2, $t0, 0x40
+	move $v0, $t2
+	ori $t2, $t0, 0x40
+	j flood_fill_num_done
+	
+	flood_fill_num_seven:
+	andi $t2, $t0, 0x80
+	move $v0, $t2
+	ori $t2, $t0, 0x80
+	
+	flood_fill_num_done:
+	sb $t2, 0($a0)
+	jr $ra
 
 #####################################################################
 ############### DO NOT CREATE A .data SECTION! ######################

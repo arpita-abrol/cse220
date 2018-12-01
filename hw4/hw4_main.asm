@@ -222,11 +222,11 @@ jal get_cell
 #syscall
 
 # testing... part IV---------------------------------
-la $a0, map
-li $a1, 6
-li $a2, 24
-li $a3, 0x2E
-jal set_cell
+#la $a0, map
+#li $a1, 6
+#li $a2, 24
+#li $a3, 0x2E
+#jal set_cell
 
 #move $a0, $v0
 #li $v0, 1
@@ -239,41 +239,52 @@ li $a2, 2
 jal reveal_area
 
 # testing part VI---------------------------------
-la $a0, map
-la $a1, player
-li $a2, 'L'
-jal get_attack_target
+#la $a0, map
+#la $a1, player
+#li $a2, 'L'
+#jal get_attack_target
 
 #move $a0, $v0
 #li $v0, 1
 #syscall
 
 # testing part VII---------------------------------
-la $a0, map
-la $a1, player
-li $a2, 2
-li $a3, 2
-jal complete_attack
+#la $a0, map
+#la $a1, player
+#li $a2, 2
+#li $a3, 2
+#jal complete_attack
 
 # testing part VIII---------------------------------
-la $a0, map
-la $a1, player
-jal monster_attacks
+#la $a0, map
+#la $a1, player
+#jal monster_attacks
 
-move $a0, $v0
-li $v0, 1
-syscall
+#move $a0, $v0
+#li $v0, 1
+#syscall
+
+# testing part IX---------------------------------
+#la $a0, map
+#la $a1, player
+#li $a2, 3
+#li $a3, 1
+#jal player_move
+
+#move $a0, $v0
+#li $v0, 1
+#syscall
 
 # fill in arguments part V---------------------------------
 #jal reveal_area
 
+############################################################
 li $s0, 0  # move = 0
-
-game_loop:  # while player is not dead and move == 0:
 
 jal print_map # takes no args
 
-#jal print_player_info # takes no args
+jal print_player_info # takes no args
+game_loop:  # while player is not dead and move == 0:
 
 # print prompt
 la $a0, your_move_str
@@ -291,8 +302,57 @@ syscall
 
 # handle input: w, a, s or d
 # map w, a, s, d  to  U, L, D, R and call player_turn()
+bne $s1, 'w', check_one
+la $a0, map
+la $a1, player
+li $a2, 'U'
+jal player_turn
+move $s0, $v0
 
+check_one:
+bne $s1, 'a', check_two
+la $a0, map
+la $a1, player
+li $a2, 'L'
+jal player_turn
+move $s0, $v0
+
+check_two:
+bne $s1, 's', check_three
+la $a0, map
+la $a1, player
+li $a2, 'D'
+jal player_turn
+move $s0, $v0
+
+check_three:
+bne $s1, 'd', check_four
+la $a0, map
+la $a1, player
+li $a2, 'R'
+jal player_turn
+move $s0, $v0
+
+check_four:
+beq $s1, 'r', game_loop
+
+
+# print $s0
+move $a0, $s0
+li $v0, 1
+syscall
 # if move == 0, call reveal_area()  Otherwise, exit the loop.
+bnez $s0, game_over
+
+la $a0, map
+la $t0, player
+lbu $a1, 0($t0)
+lbu $a2, 1($t0)
+jal reveal_area
+
+jal print_map # takes no args
+
+jal print_player_info # takes no args
 
 j game_loop
 
@@ -302,6 +362,16 @@ game_over:
 li $a0, '\n'
 li $v0, 11
 syscall
+
+la $a0, map
+li $a1, 1
+li $a2, 1
+la $a3, visited
+jal flood_fill_reveal
+
+jal print_map
+
+jal print_player_info
 
 # choose between (1) player dead, (2) player escaped but lost, (3) player escaped and won
 
